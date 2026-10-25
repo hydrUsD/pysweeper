@@ -1,0 +1,103 @@
+---
+title: PySweeper – Klassendiagramm
+config:
+  layout: elk
+---
+classDiagram
+    direction LR
+
+    class Game {
+        <<Controller>>
+        +board: Board
+        +difficulty: DifficultyConfig
+        +state: GameState
+        +init(difficulty: DifficultyConfig)
+        +reveal(x: int, y: int) None
+        +toggle_flag(x: int, y: int) None
+        +set_difficulty(new_difficulty: DifficultyConfig) None
+        +reset_board() None
+    }
+
+    class GameState {
+        <<enumeration>>
+        PLAYING
+        WON
+        LOST
+    }
+
+    class DifficultyConfig {
+        <<Entity>>
+        +name: str
+        +amount: int
+        +size: tuple[int, int]
+    }
+    note for DifficultyConfig "size = (width, height)"
+
+    class Board {
+        <<Service>>
+        +width: int
+        +height: int
+        +mine_amount: int
+        +mines_planted: bool
+        +grid: List[List[Cell]]
+        +init(width: int, height: int, mine_amount: int)
+        -_initialize_board() None
+        -_plant_mines(safe_x: int, safe_y: int) None
+        -_calculate_neighbors() None
+        +reveal_cell(x: int, y: int) bool
+        -_cascade_reveal(x: int, y: int) None
+        +toggle_flag(x: int, y: int) None
+        +check_win() bool
+    }
+
+    class Cell {
+        <<Entity>>
+        +x: int
+        +y: int
+        +is_mine: bool
+        +is_revealed: bool
+        +is_flagged: bool
+        +neighbor_mines: int
+        +init(x: int, y: int)
+        +toggle_flag() None
+    }
+
+    class UserInterface {
+        <<abstract>>
+        +run(game: Game)* None
+        +draw_board(board: Board)* None
+    }
+
+    class TerminalUI {
+        <<Service>>
+        +stdscr: Any
+        +cursor_x: int
+        +cursor_y: int
+        +init(stdscr: Any)
+        -_setup_curses() None
+        +run(game: Game) None
+        +draw_board(board: Board) None
+        -_get_input() int
+        -_move_cursor(dx: int, dy: int) None
+    }
+
+    class TkinterUI {
+        <<Service>>
+        +root: tk.Tk
+        +buttons: List[List[tk.Button]]
+        +init(root: tk.Tk)
+        -_create_widgets(width: int, height: int) None
+        +run(game: Game) None
+        +draw_board(board: Board) None
+        -_on_left_click(x: int, y: int) None
+        -_on_right_click(x: int, y: int) None
+    }
+
+    Game *-- Board : manages layout
+    Game --> DifficultyConfig : configured by
+    Game --> GameState : tracks
+    Board *-- Cell : composed of 2D grid
+    UserInterface <|-- TerminalUI
+    UserInterface <|-- TkinterUI
+    UserInterface ..> Game : calls reveal / toggle_flag
+    UserInterface ..> Board : reads data from

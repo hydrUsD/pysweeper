@@ -1,0 +1,48 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+build/
+dist/
+
+# --- Virtual environments (uv creates .venv; uv.lock IS committed) ---
+.venv/
+venv/
+env/
+
+# --- Test / tooling caches ---
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# --- Jupyter ---
+.ipynb_checkpoints/
+
+# --- Secrets & local config ---
+.env
+.env.*
+!.env.example
+
+# --- IDEs & editors ---
+.idea/
+.vscode/
+*.swp
+*~
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+
+# --- Claude Code (local-only files) ---
+.claude/settings.local.json
+CLAUDE.local.md
+
+# --- Project-specific ---
+# private planning notes for the course build pipeline
+_prep/
+# which hints a learner has already opened (personal progress)
+course/.hints_seen.json
