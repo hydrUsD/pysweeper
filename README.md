@@ -126,6 +126,11 @@ The full diagram lives in [`pysweeper-class-diagram.mmd`](pysweeper-class-diagra
 Here is the short version:
 
 ```mermaid
+---
+config:
+  layout: elk
+  theme: redux-dark-color
+---
 classDiagram
     direction LR
     Game *-- Board : manages
