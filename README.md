@@ -6,6 +6,7 @@
 
 **Minesweeper in your terminal, and a hands-on course for refactoring it into clean, object-oriented Python.**
 
+[![Tests](https://github.com/hydrUsD/pysweeper/actions/workflows/tests.yml/badge.svg)](https://github.com/hydrUsD/pysweeper/actions/workflows/tests.yml)
 ![Python](https://img.shields.io/badge/python-3.12-3776AB?logo=python&logoColor=white)
 ![uv](https://img.shields.io/badge/managed%20with-uv-DE5FE9)
 ![curses](https://img.shields.io/badge/UI-curses-lightgrey)
@@ -180,6 +181,9 @@ uv run pytest course/tests/test_l1.py
 ```
 
 or call `check("l1")` from inside the notebook. Running the whole suite (`uv run pytest`) only passes once every lesson is done.
+
+GitHub Actions runs the checks on every push and on pull requests to `main`, but only for finished lessons.
+They're listed in `LESSONS` in [`.github/workflows/tests.yml`](.github/workflows/tests.yml). Add a lesson there when you complete it.
 
 ## Roadmap
 
