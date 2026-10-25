@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from pysweeper.game_state import GameState
 
 @dataclass(frozen=True)
 class DifficultyConfig:
