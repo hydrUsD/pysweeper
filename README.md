@@ -110,6 +110,7 @@ To play the original single-file reference instead, run `uv run main.py`. It has
 [`tkinter-mcp-server`](https://github.com/tctibbs/tkinter-mcp-server) is a dev dependency and registered in `.mcp.json`.
 Claude Code offers it after a restart in the project folder (approve the "tkinter" server, check with `/mcp`).
 Launch the game with `launch_app` and the script `tools/tk_inspect.py`, then read the widget tree (`get_ui_layout`) and click cells (`click_widget`).
+Cells are buttons up to L8 and labels from L9 on; `click_widget` handles both (labels get a generated `<Button-1>` event).
 Screenshots need the macOS permission *Screen & System Audio Recording* for the app running Claude Code. There is no tool for key presses, so R and Q can't be tested this way.
 
 ## Project structure
@@ -200,6 +201,8 @@ The course is written in **German** and targets developers who know OOP from Jav
 | L7 | Bonus: `TkinterUI` |
 | L8 | `StartMenu`: inheriting from `tk.Frame`, `super()`, `tk.StringVar`, functions as dict values |
 | L8+ | Back to the start menu after each game |
+| L9 | Open vs. closed cells in `TkinterUI`: a style `dict` per cell, `**` unpacking, `bind` instead of `command` |
+| L9+ | Show wrongly placed flags after a loss |
 
 Each lesson follows the same loop: 🎯 learning goal → 📖 theory → 🛠 task → 💡 hints → ✅ check.
 
@@ -227,6 +230,7 @@ CI runs the checks under `xvfb-run`, because the L8 checks open a (hidden) Tk wi
 - [x] Bonus: `TkinterUI` front end (L7)
 - [x] Start menu for front end and difficulty (`python -m pysweeper`)
 - [ ] `StartMenu` as its own Tkinter class, replacing the curses menu (L8)
+- [ ] Open and closed cells distinguishable in the Tkinter front end (L9)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 

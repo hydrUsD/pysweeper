@@ -13,6 +13,8 @@ TITLES = {
     "l7": "Lektion 7 – TkinterUI (Bonus)",
     "l8": "Lektion 8 – StartMenu",
     "l8_extra": "Lektion 8+ – Zurück ins Startmenü",
+    "l9": "Lektion 9 – Offene und geschlossene Zellen",
+    "l9_extra": "Lektion 9+ – Falsche Flaggen nach der Niederlage",
 }
 
 HINTS = {
@@ -233,6 +235,39 @@ HINTS = {
         "        ...                    # gewählte Oberfläche starten\n"
         "Kürzer geht es mit dem Walross-Operator :=, der in einem Ausdruck zuweist (seit Python 3.8).",
     ],
+    "l9": [
+        "Zwei Fragen trennen: „Wie soll diese Zelle aussehen?“ (hängt nur vom Zustand der Zelle ab) und „Wie "
+        "bringe ich das auf den Bildschirm?“ (Tk). Welche der beiden lässt sich ohne Fenster beantworten und testen?",
+        "_cell_style ist eine Abfrage: Sie bekommt eine Cell und gibt ein dict mit text, relief, bg und fg zurück, "
+        "ohne irgendein Widget anzufassen. Lege zwei Grund-Stile als Konstanten an (geschlossen, offen) und baue "
+        "die Sonderfälle mit {**GRUNDSTIL, \"text\": …} daraus. Die Reihenfolge der Prüfungen zählt: Eine Flagge "
+        "liegt immer auf einer geschlossenen Zelle. In _create_widgets wird aus tk.Button ein tk.Label, und weil "
+        "ein Label kein command= kennt, hängt der Linksklick per bind(\"<Button-1>\", …) dran. bind übergibt dem "
+        "Callback ein Event-Objekt, das die lambda annehmen muss.",
+        "Gerüst (Farben und Sonderfälle selbst ergänzen):\n"
+        "    CLOSED = {\"relief\": \"raised\", \"bg\": ..., \"fg\": \"black\", \"text\": \"\"}\n"
+        "    OPEN = {\"relief\": \"flat\", \"bg\": ..., \"fg\": \"black\", \"text\": \"\"}\n\n"
+        "    def _cell_style(self, cell):\n"
+        "        if cell.is_flagged:\n"
+        "            return {**CLOSED, \"text\": \"F\"}\n"
+        "        if not cell.is_revealed:\n"
+        "            return CLOSED\n"
+        "        ...                      # Mine, Zahl, leer\n\n"
+        "In _create_widgets:\n"
+        "    label = tk.Label(self.root, width=2)\n"
+        "    label.bind(\"<Button-1>\", lambda e, x=x, y=y: self._on_left_click(x, y))\n"
+        "In draw_board: self.cells[c.y][c.x].config(**self._cell_style(c))",
+    ],
+    "l9_extra": [
+        "Ob eine Flagge falsch war, darf man erst nach dem Spiel sehen. Welche zwei Informationen braucht "
+        "_cell_style dafür, und woher bekommt es die zweite?",
+        "Die Zelle weiß, ob sie eine Mine ist. Ob das Spiel verloren ist, weiß nur self.game.state. Falsch ist eine "
+        "Flagge, wenn das Spiel LOST ist und die Zelle keine Mine.",
+        "Gerüst:\n"
+        "    if cell.is_flagged:\n"
+        "        wrong = ... and not cell.is_mine\n"
+        "        return {**CLOSED, \"text\": \"X\" if wrong else \"F\"}",
+    ],
 }
 
 ANSWERS = {
@@ -339,6 +374,21 @@ ANSWERS = {
 • Warum LAUNCHERS statt if/else? Die Liste der Oberflächen steht an genau einer Stelle, und das Menü liest
   sie von dort. Mit if/else müsstest du für eine neue UI das Menü und die Verzweigung ändern und darauf
   achten, dass die Namen gleich geschrieben sind.""",
+    "l9": """Musterantworten L9
+• Warum gibt _cell_style ein dict zurück, statt das Label selbst zu ändern? So ist „wie sieht eine Zelle aus“
+  eine reine Abfrage ohne Seiteneffekt (Command-Query-Trennung wie in L4). Sie lässt sich ohne Fenster testen,
+  und draw_board bleibt eine einzige Zeile pro Zelle. Die TerminalUI macht es mit _cell_look genauso, nur mit
+  curses-Attributen statt Tk-Optionen.
+• Warum Labels statt Buttons? Auf macOS zeichnet Tk Buttons mit dem System-Look (Aqua) und ignoriert bg und
+  relief. Ein Label zeichnet Tk selbst, deshalb wirken die Optionen dort auf jedem System gleich. Der Preis:
+  Ein Label hat kein command=, der Klick kommt über bind.
+• Was ist der Unterschied zwischen command= und bind? command= gibt es nur bei Widgets mit einer
+  „Hauptaktion“ (Button, Checkbutton …) und ruft die Funktion ohne Argumente auf. bind hängt an ein
+  beliebiges Ereignis (Maustaste, Taste, Fokus …) und übergibt immer ein Event-Objekt, deshalb lambda e, ….
+  In Java entspricht command= etwa addActionListener, bind etwa addMouseListener.
+• Was macht {**CLOSED, "text": "F"}? Es baut ein neues dict: erst alle Einträge aus CLOSED, dann wird text
+  überschrieben. CLOSED selbst bleibt unverändert. Darum dürfen die Grund-Stile Konstanten sein, die sich
+  alle Zellen teilen. (Gefährlich wäre CLOSED["text"] = "F": Das änderte den Stil für jede geschlossene Zelle.)""",
     "quiz": """Musterantworten Abschluss-Quiz
 1. __init__, __repr__, __eq__ (und mehr). frozen=True verbietet Zuweisungen nach dem Erzeugen und macht die
    Objekte hashbar.
