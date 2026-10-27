@@ -14,6 +14,7 @@ FLAG_PAIR, MINE_PAIR = 9, 10
 NUMBER_COLORS = {1: curses.COLOR_BLUE, 2: curses.COLOR_GREEN, 3: curses.COLOR_RED, 4: curses.COLOR_MAGENTA,
                  5: curses.COLOR_YELLOW, 6: curses.COLOR_CYAN, 7: curses.COLOR_WHITE, 8: curses.COLOR_WHITE}
 HELP = 'Arrows/WASD move  Space reveal  F flag  R restart  Q quit'
+GAME_OVER_HELP = 'R restart  Q quit'
 UP = (curses.KEY_UP, ord('w'), ord('W'))
 DOWN = (curses.KEY_DOWN, ord('s'), ord('S'))
 LEFT = (curses.KEY_LEFT, ord('a'), ord('A'))
@@ -117,9 +118,10 @@ class TerminalUI(UserInterface):
         footer = top + board.height + 3
         if self.game.state is GameState.WON:
             self._put(footer, left, f'You win! Cleared in {self.game.elapsed}s.')
+            self._put(footer + 1, left, GAME_OVER_HELP, curses.A_DIM)
         elif self.game.state is GameState.LOST:
             self._put(footer, left, 'Boom! You hit a mine.')
-            self._put(footer + 1, left, 'R restart  Q quit', curses.A_DIM)
+            self._put(footer + 1, left, GAME_OVER_HELP, curses.A_DIM)
         else:
             self._put(footer, left, HELP, curses.A_DIM)
         s.refresh()
