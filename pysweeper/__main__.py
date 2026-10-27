@@ -1,4 +1,7 @@
 import curses
+import os
+import sys
+from pathlib import Path
 
 from pysweeper.difficulty_config import DIFFICULTIES, DifficultyConfig
 from pysweeper.game import Game
@@ -54,11 +57,20 @@ def run_terminal(stdscr, difficulty: DifficultyConfig) -> None:
     TerminalUI(stdscr).run(Game(difficulty))
 
 
+def _use_base_tcl(tk) -> None:
+    # In a venv, Tcl looks for its library next to the venv interpreter, so point it at the base install.
+    lib = Path(sys.base_prefix) / "lib"
+    for var, path in (("TCL_LIBRARY", lib / f"tcl{tk.TclVersion}"), ("TK_LIBRARY", lib / f"tk{tk.TkVersion}")):
+        if var not in os.environ and path.is_dir():
+            os.environ[var] = str(path)
+
+
 def run_tkinter(difficulty: DifficultyConfig) -> None:
     import tkinter as tk
 
     from pysweeper.ui.tkinter_ui import TkinterUI
 
+    _use_base_tcl(tk)
     root = tk.Tk()
     root.title(f"Minesweeper - {difficulty.name}")
     TkinterUI(root).run(Game(difficulty))
