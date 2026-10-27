@@ -119,6 +119,7 @@ class TerminalUI(UserInterface):
             self._put(footer, left, f'You win! Cleared in {self.game.elapsed}s.')
         elif self.game.state is GameState.LOST:
             self._put(footer, left, 'Boom! You hit a mine.')
+            self._put(footer + 1, left, 'R restart  Q quit', curses.A_DIM)
         else:
             self._put(footer, left, HELP, curses.A_DIM)
         s.refresh()
