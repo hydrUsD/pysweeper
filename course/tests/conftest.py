@@ -34,7 +34,10 @@ def tk_root():
     try:
         root = tk.Tk()
     except tk.TclError as e:
-        pytest.skip(f"Tk startet hier nicht ({e}). Ohne Bildschirm (z. B. in CI) nur unter xvfb-run.")
+        if os.environ.get("CI"):
+            # In CI darf ein kaputtes Tk nicht als „übersprungen“ grün durchrutschen.
+            pytest.fail(f"Tk startet in CI nicht: {e}. Laufen die Checks unter xvfb-run?", pytrace=False)
+        pytest.skip(f"Tk startet hier nicht: {e}")
     root.withdraw()
     yield root
     try:

@@ -24,14 +24,22 @@ def _by_name(name):
     return next(d for d in _difficulties() if d.name == name)
 
 
+def _menu_difficulties():
+    """Erfundene Liste: StartMenu soll die übergebenen Schwierigkeiten zeigen, nicht DIFFICULTIES importieren."""
+    DifficultyConfig = need("pysweeper.difficulty_config", "DifficultyConfig")
+    return [DifficultyConfig("Mini", 1, (2, 2)), _by_name("Medium"), _by_name("Hard")]
+
+
 def _menu(root, names=NAMES):
     StartMenu = need("pysweeper.ui.start_menu", "StartMenu")
     try:
-        return StartMenu(root, names, _difficulties())
+        return StartMenu(root, names, _menu_difficulties())
     except Exception as e:
-        hint = (" Ruft __init__ als Erstes super().__init__(master) auf? Ohne das fehlt dem Frame sein "
-                "Tk-Innenleben.") if isinstance(e, AttributeError) else ""
-        pytest.fail(f"StartMenu(root, {names}, DIFFICULTIES) scheitert: {type(e).__name__}: {e}.{hint}",
+        hint = ""
+        if isinstance(e, AttributeError) and ("'tk'" in str(e) or "'master'" in str(e)):
+            hint = (" Ruft __init__ als Erstes super().__init__(master) auf? Ohne das fehlt dem Frame sein "
+                    "Tk-Innenleben.")
+        pytest.fail(f"StartMenu(root, {names}, difficulties) scheitert: {type(e).__name__}: {e}.{hint}",
                     pytrace=False)
 
 
@@ -70,7 +78,9 @@ def test_init_calls_super(tk_root):
     assert menu.master is tk_root, \
         "menu.master ist nicht das übergebene Fenster. Reichst du master an super().__init__(master) weiter?"
     assert list(menu.ui_names) == NAMES
-    assert list(menu.difficulties) == _difficulties()
+    assert list(menu.difficulties) == _menu_difficulties(), \
+        "menu.difficulties ist nicht die übergebene Liste. Speichere den Parameter difficulties, statt " \
+        "DIFFICULTIES zu importieren."
 
 
 def test_variables_start_values(tk_root):
@@ -79,10 +89,11 @@ def test_variables_start_values(tk_root):
     for name in ("ui_choice", "difficulty_choice"):
         assert isinstance(getattr(menu, name, None), tk.StringVar), f"menu.{name} soll ein tk.StringVar sein."
     assert menu.ui_choice.get() == NAMES[0], \
-        f"ui_choice startet mit {menu.ui_choice.get()!r}, erwartet der erste UI-Name {NAMES[0]!r}."
-    first = _difficulties()[0].name
+        f"ui_choice startet mit {menu.ui_choice.get()!r}, erwartet wird der erste UI-Name {NAMES[0]!r}."
+    first = _menu_difficulties()[0].name
     assert menu.difficulty_choice.get() == first, \
-        f"difficulty_choice startet mit {menu.difficulty_choice.get()!r}, erwartet {first!r} (der Name, nicht das Objekt)."
+        f"difficulty_choice startet mit {menu.difficulty_choice.get()!r}, erwartet wird {first!r} " \
+        f"(der Name der ersten übergebenen Schwierigkeit, nicht das Objekt)."
     assert menu.selection is None, "Vor dem Klick auf Start soll selection None sein."
 
 
@@ -95,18 +106,20 @@ def test_radiobuttons_for_ui_names(tk_root):
         f"Radiobuttons an ui_choice: {texts}, erwartet {sorted(NAMES)}. Die Namen kommen aus ui_names, " \
         f"nicht fest aus dem Code."
     next(r for r in radios if r.cget("text") == "Beta").invoke()
-    assert menu.ui_choice.get() == "Beta", "Klick auf „Beta“ ändert ui_choice nicht. Stimmt value=…?"
+    assert menu.ui_choice.get() == "Beta", "Klick auf „Beta“ ändert ui_choice nicht. Hat der Radiobutton value=name?"
 
 
 def test_radiobuttons_for_difficulties(tk_root):
-    """Ein Radiobutton pro Schwierigkeit, gebunden an difficulty_choice (value = Name)"""
+    """Ein Radiobutton pro übergebener Schwierigkeit, gebunden an difficulty_choice (value = Name)"""
     menu = _menu(tk_root)
     radios = _radios_for(menu, menu.difficulty_choice)
-    assert len(radios) == len(_difficulties()), \
-        f"{len(radios)} Radiobuttons an difficulty_choice, erwartet {len(_difficulties())} (einer pro Schwierigkeit)."
-    for d in _difficulties():
+    expected = _menu_difficulties()
+    assert len(radios) == len(expected), \
+        f"{len(radios)} Radiobuttons an difficulty_choice, erwartet {len(expected)} (einer pro übergebener " \
+        f"Schwierigkeit, der Test übergibt {[d.name for d in expected]})."
+    for d in expected:
         matching = [r for r in radios if d.name in r.cget("text")]
-        assert matching, f"Kein Radiobutton mit {d.name!r} im Text."
+        assert matching, f"Kein Radiobutton mit {d.name!r} im Text. Kommen die Schwierigkeiten aus dem Parameter?"
         matching[0].invoke()
         assert menu.difficulty_choice.get() == d.name, \
             f"Klick auf {d.name!r} setzt difficulty_choice auf {menu.difficulty_choice.get()!r}, erwartet {d.name!r}."
@@ -139,19 +152,31 @@ def test_run_returns_selection(tk_root):
     def press_start():
         seen["manager"] = menu.winfo_manager()
         menu.ui_choice.set("Beta")
-        menu.start_button.invoke()
+        try:
+            menu.start_button.invoke()
+        except Exception as e:   # Fehler in _on_start: melden statt auf den Timeout zu warten
+            seen["error"] = f"{type(e).__name__}: {e}"
+            tk_root.destroy()
 
     def give_up():
         seen["timeout"] = True
         tk_root.destroy()
 
     tk_root.after(50, press_start)
-    tk_root.after(3000, give_up)
-    result = menu.run()
+    guard = tk_root.after(3000, give_up)
+    try:
+        result = menu.run()
+    finally:
+        try:
+            tk_root.after_cancel(guard)   # sonst feuert der Timer später in einem anderen Fenster
+        except tk.TclError:
+            pass
     assert "manager" in seen, "run() kehrt zurück, ohne zu warten. Fehlt self.master.mainloop()?"
     assert seen["manager"], "Das Menü ist nicht platziert, das Fenster bliebe leer. Fehlt self.pack() in run()?"
+    assert "error" not in seen, f"Der Klick auf Start wirft einen Fehler in _on_start: {seen.get('error')}"
     assert "timeout" not in seen, "run() endet nach Start nicht. Schließt _on_start das Fenster?"
-    assert result == ("Beta", _difficulties()[0]), f"run() gibt {result!r} zurück, erwartet die Auswahl aus selection."
+    expected = ("Beta", _menu_difficulties()[0])
+    assert result == expected, f"run() gibt {result!r} zurück, erwartet die Auswahl aus selection: {expected!r}."
 
 
 def test_run_closed_without_start(tk_root):
@@ -186,9 +211,12 @@ def test_main_has_launchers(monkeypatch):
     assert set(launchers) == {"Terminal", "Tkinter"}, f"LAUNCHERS hat die Schlüssel {sorted(launchers)}."
     for name, start in launchers.items():
         assert callable(start), f"LAUNCHERS[{name!r}] ist keine Funktion."
-        params = list(inspect.signature(start).parameters)
-        assert len(params) == 1, \
-            f"LAUNCHERS[{name!r}] erwartet die Parameter {params}, gedacht ist genau einer: difficulty."
+        signature = inspect.signature(start)
+        try:
+            signature.bind(object())
+        except TypeError:
+            pytest.fail(f"LAUNCHERS[{name!r}] hat die Signatur {signature}. Sie soll mit genau einem Argument "
+                        f"aufrufbar sein: LAUNCHERS[{name!r}](difficulty).", pytrace=False)
 
 
 class _FakeScreen:
@@ -209,20 +237,36 @@ def run_main(monkeypatch, selections):
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
             self.withdraw()
+            # Notbremse: Läuft doch das echte StartMenu, beendet das seine mainloop nach 2 s. quit() ist nötig,
+            # weil mainloop() erst endet, wenn *alle* Tk-Fenster zu sind, und das Fenster aus tk_root noch offen ist.
+            self.guard = self.after(2000, lambda: (self.quit(), self.destroy()))
             created.append(self)
 
     class FakeMenu:
         def __init__(self, master, ui_names, difficulties):
+            try:
+                master.winfo_exists()
+            except (tk.TclError, AttributeError):
+                pytest.fail("StartMenu bekommt als master kein offenes Fenster. Das Menü schließt sein Fenster "
+                            "mit destroy(), deshalb braucht jede Runde ein neues tk.Tk().", pytrace=False)
+            self.master = master
             calls["menus"].append((list(ui_names), list(difficulties)))
 
         def run(self):
+            self.master.destroy()   # wie das echte Menü: nach der Auswahl ist das Fenster zu
             return selections.pop(0) if selections else None
 
     def fake_wrapper(func, *args, **kwargs):
+        if not calls["menus"]:
+            pytest.fail("curses.wrapper läuft, bevor das StartMenu gezeigt wurde. Ist das alte curses-Menü "
+                        "(menu/choose) noch aktiv?", pytrace=False)
         calls["wrapper"] += 1
         return func(_FakeScreen(), *args, **kwargs)
 
     monkeypatch.setattr(need("pysweeper.ui.start_menu"), "StartMenu", FakeMenu)
+    ui_package = need("pysweeper.ui")
+    if hasattr(ui_package, "StartMenu"):   # falls StartMenu auch über pysweeper.ui importiert wird
+        monkeypatch.setattr(ui_package, "StartMenu", FakeMenu)
     monkeypatch.setattr(need("pysweeper.ui.terminal_ui", "TerminalUI"), "run",
                         lambda self, game: calls["terminal"].append(game))
     monkeypatch.setattr(need("pysweeper.ui.tkinter_ui", "TkinterUI"), "run",
@@ -237,14 +281,17 @@ def run_main(monkeypatch, selections):
     finally:
         for root in created:
             try:
+                root.after_cancel(root.guard)
                 root.destroy()
             except tk.TclError:
-                pass
+                pass   # schon geschlossen
     return calls
 
 
 def _check_menu_args(calls):
-    assert calls["menus"], "python -m pysweeper zeigt kein StartMenu. Wird StartMenu(...).run() aufgerufen?"
+    assert calls["menus"], \
+        "python -m pysweeper zeigt kein StartMenu aus pysweeper/ui/start_menu.py. Wird es mit " \
+        "`from pysweeper.ui.start_menu import StartMenu` importiert und StartMenu(...).run() aufgerufen?"
     ui_names, difficulties = calls["menus"][0]
     assert set(ui_names) == {"Terminal", "Tkinter"}, \
         f"StartMenu bekommt die UI-Namen {ui_names}. Gib ihm list(LAUNCHERS) mit."

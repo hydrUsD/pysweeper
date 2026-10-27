@@ -193,14 +193,12 @@ HINTS = {
         "StartMenu IST ein Frame (Vererbung), TkinterUI HAT ein Fenster (Komposition). Was muss ein "
         "Konstruktor tun, bevor die geerbten Teile benutzbar sind? Und woher weiß das Menü, welche "
         "Oberflächen es anbieten soll, ohne „Terminal“ selbst hinzuschreiben?",
-        "Erste Zeile in __init__: super().__init__(master), danach erst Variablen und Widgets. Pro Auswahl "
-        "eine tk.StringVar(master=self, value=…), und jeder Radiobutton bekommt variable=… und value=…: Tk "
-        "schreibt beim Klick den value in die Variable. _on_start liest beide Variablen mit .get(), sucht das "
-        "DifficultyConfig mit dem passenden Namen heraus, speichert das Paar in selection und schließt mit "
-        "self.master.destroy(). run() ist pack() + self.master.mainloop() + return. In __main__.py ersetzt das "
-        "dict LAUNCHERS das if/else: Der Schlüssel ist der Name im Menü, der Wert die Funktion, die startet. "
-        "Die Terminal-Startfunktion ruft curses.wrapper(...) auf, die Tkinter-Startfunktion ist dein run_tkinter.",
-        "Gerüst StartMenu (Widgets und Rückgabe selbst ergänzen):\n"
+        "Erst super().__init__(master), danach Variablen und Widgets. Radiobuttons, die sich eine StringVar "
+        "teilen, bilden eine Gruppe: Beim Klick schreibt Tk den value des Buttons in die Variable. Die "
+        "Variable hält deshalb nur Namen; das passende DifficultyConfig suchst du erst beim Start heraus. "
+        "Für __main__.py: Jeder Eintrag in LAUNCHERS ist eine Funktion, die eine Schwierigkeit bekommt und "
+        "„ihre“ Oberfläche startet. Zwei davon hast du schon fast.",
+        "Gerüst StartMenu (Widgets und run() selbst ergänzen):\n"
         "    class StartMenu(tk.Frame):\n"
         "        def __init__(self, master, ui_names, difficulties):\n"
         "            super().__init__(master)\n"
@@ -225,9 +223,15 @@ HINTS = {
     "l8_extra": [
         "Das Programm soll erst enden, wenn das Menü ohne Start geschlossen wird. Welche Schleife hört genau "
         "dann auf, und warum braucht jeder Durchlauf ein neues tk.Tk()?",
-        "Eine while-Schleife, die läuft, solange run() nicht None liefert. Das Menü schließt sein Fenster mit "
-        "destroy(), deshalb braucht jede Runde ein frisches tk.Tk(). Mit dem Walross-Operator geht das in "
-        "einer Zeile: while (selection := StartMenu(...).run()) is not None: ...",
+        "Eine Schleife, die so lange läuft, bis run() None liefert. Das Menü schließt sein Fenster mit "
+        "destroy(), deshalb gehören tk.Tk() und StartMenu(...) in die Schleife, nicht davor.",
+        "Gerüst:\n"
+        "    while True:\n"
+        "        selection = ...        # neues Fenster, neues StartMenu, run()\n"
+        "        if selection is None:\n"
+        "            break\n"
+        "        ...                    # gewählte Oberfläche starten\n"
+        "Kürzer geht es mit dem Walross-Operator :=, der in einem Ausdruck zuweist (seit Python 3.8).",
     ],
 }
 
@@ -330,7 +334,8 @@ ANSWERS = {
 • Was passiert ohne super().__init__(master)? Der Frame-Teil des Objekts wird nie eingerichtet: Es fehlen
   self.tk, self.master und das echte Tk-Widget. Der Fehler kommt erst beim ersten Kind-Widget oder bei
   StringVar(master=self) als AttributeError, weit weg von der eigentlichen Ursache. In Java ergänzt der
-  Compiler super() automatisch, in Python passiert nichts, wenn du es vergisst.
+  Compiler super() automatisch. In Python läuft das geerbte __init__ nur dann von selbst, wenn die
+  Unterklasse gar kein eigenes __init__ hat; schreibst du eines, musst du super().__init__ selbst aufrufen.
 • Warum LAUNCHERS statt if/else? Die Liste der Oberflächen steht an genau einer Stelle, und das Menü liest
   sie von dort. Mit if/else müsstest du für eine neue UI das Menü und die Verzweigung ändern und darauf
   achten, dass die Namen gleich geschrieben sind.""",
