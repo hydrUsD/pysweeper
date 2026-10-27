@@ -218,7 +218,7 @@ or call `check("l1")` from inside the notebook. Running the whole suite (`uv run
 
 GitHub Actions runs the checks on every push and on pull requests to `main`, but only for finished lessons.
 They're listed in `LESSONS` in [`.github/workflows/tests.yml`](.github/workflows/tests.yml). Add a lesson there when you complete it.
-CI runs the checks under `xvfb-run`, because the L8 checks open a (hidden) Tk window and need a display.
+CI runs the checks under `xvfb-run`, because the L8 and L9 checks open (invisible) Tk windows and need a display.
 
 ## Roadmap
 

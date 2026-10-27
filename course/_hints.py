@@ -241,9 +241,7 @@ HINTS = {
         "_cell_style ist eine Abfrage: Sie bekommt eine Cell und gibt ein dict mit text, relief, bg und fg zurück, "
         "ohne irgendein Widget anzufassen. Lege zwei Grund-Stile als Konstanten an (geschlossen, offen) und baue "
         "die Sonderfälle mit {**GRUNDSTIL, \"text\": …} daraus. Die Reihenfolge der Prüfungen zählt: Eine Flagge "
-        "liegt immer auf einer geschlossenen Zelle. In _create_widgets wird aus tk.Button ein tk.Label, und weil "
-        "ein Label kein command= kennt, hängt der Linksklick per bind(\"<Button-1>\", …) dran. bind übergibt dem "
-        "Callback ein Event-Objekt, das die lambda annehmen muss.",
+        "liegt immer auf einer geschlossenen Zelle.",
         "Gerüst (Farben und Sonderfälle selbst ergänzen):\n"
         "    CLOSED = {\"relief\": \"raised\", \"bg\": ..., \"fg\": \"black\", \"text\": \"\"}\n"
         "    OPEN = {\"relief\": \"flat\", \"bg\": ..., \"fg\": \"black\", \"text\": \"\"}\n\n"
@@ -253,7 +251,8 @@ HINTS = {
         "        if not cell.is_revealed:\n"
         "            return CLOSED\n"
         "        ...                      # Mine, Zahl, leer\n\n"
-        "In _create_widgets:\n"
+        "In _create_widgets wird aus tk.Button ein tk.Label. Ein Label kennt kein command=, der Klick hängt per "
+        "bind dran, und bind übergibt ein Event-Objekt:\n"
         "    label = tk.Label(self.root, width=2)\n"
         "    label.bind(\"<Button-1>\", lambda e, x=x, y=y: self._on_left_click(x, y))\n"
         "In draw_board: self.cells[c.y][c.x].config(**self._cell_style(c))",
@@ -383,9 +382,10 @@ ANSWERS = {
   relief. Ein Label zeichnet Tk selbst, deshalb wirken die Optionen dort auf jedem System gleich. Der Preis:
   Ein Label hat kein command=, der Klick kommt über bind.
 • Was ist der Unterschied zwischen command= und bind? command= gibt es nur bei Widgets mit einer
-  „Hauptaktion“ (Button, Checkbutton …) und ruft die Funktion ohne Argumente auf. bind hängt an ein
-  beliebiges Ereignis (Maustaste, Taste, Fokus …) und übergibt immer ein Event-Objekt, deshalb lambda e, ….
-  In Java entspricht command= etwa addActionListener, bind etwa addMouseListener.
+  „Hauptaktion“; bei Button und Checkbutton ruft Tk die Funktion ohne Argumente auf (andere Widgets wie
+  Scale übergeben einen Wert). bind hängt an ein beliebiges Ereignis (Maustaste, Taste, Fokus …) und übergibt
+  immer ein Event-Objekt, deshalb lambda e, …. In Java entspricht command= etwa addActionListener, bind etwa
+  addMouseListener; anders als bei Tks command= bekommt aber auch der ActionListener ein Event.
 • Was macht {**CLOSED, "text": "F"}? Es baut ein neues dict: erst alle Einträge aus CLOSED, dann wird text
   überschrieben. CLOSED selbst bleibt unverändert. Darum dürfen die Grund-Stile Konstanten sein, die sich
   alle Zellen teilen. (Gefährlich wäre CLOSED["text"] = "F": Das änderte den Stil für jede geschlossene Zelle.)""",

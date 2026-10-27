@@ -16,7 +16,11 @@ def _lost_game():
 
 
 def _ui(game):
-    ui = need("pysweeper.ui.tkinter_ui", "TkinterUI")(None)
+    try:
+        ui = need("pysweeper.ui.tkinter_ui", "TkinterUI")(None)
+    except Exception as e:
+        pytest.fail(f"TkinterUI(None) scheitert: {type(e).__name__}: {e}. Die Checks bauen TkinterUI(None): "
+                    f"__init__ soll root nur speichern.", pytrace=False)
     ui.game = game
     if not callable(getattr(ui, "_cell_style", None)):
         pytest.fail("TkinterUI hat noch keine Methode _cell_style(cell). Erst Lektion 9 lösen.", pytrace=False)

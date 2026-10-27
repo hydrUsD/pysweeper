@@ -16,7 +16,12 @@ def _ui(root=None):
     TkinterUI = need("pysweeper.ui.tkinter_ui", "TkinterUI")
     Game = need("pysweeper.game", "Game")
     EASY = need("pysweeper.difficulty_config", "EASY")
-    ui = TkinterUI(root)
+    try:
+        ui = TkinterUI(root)
+    except Exception as e:
+        pytest.fail(f"TkinterUI({'None' if root is None else 'root'}) scheitert: {type(e).__name__}: {e}. Die Checks "
+                    f"prüfen _cell_style ohne Fenster und bauen dafür TkinterUI(None): __init__ soll root nur "
+                    f"speichern (Fenstertitel u. Ä. gehören nach run()).", pytrace=False)
     ui.game = Game(EASY)
     return ui
 
@@ -50,7 +55,7 @@ def test_cell_style_signature():
     TkinterUI = need("pysweeper.ui.tkinter_ui", "TkinterUI")
     assert callable(getattr(TkinterUI, "_cell_style", None)), "TkinterUI hat noch keine Methode _cell_style(cell)."
     params = list(inspect.signature(TkinterUI._cell_style).parameters)
-    assert params == ["self", "cell"], f"_cell_style hat die Parameter {params}, erwartet (self, cell)."
+    assert len(params) == 2, f"_cell_style hat die Parameter {params}, erwartet (self, cell): genau eine Zelle."
 
 
 def test_closed_and_flagged():
@@ -84,9 +89,16 @@ def test_numbers_have_colors():
     ui = _ui()
     styles = {n: _style(ui, _cell(is_revealed=True, neighbor_mines=n)) for n in range(1, 9)}
     for n, style in styles.items():
-        assert style["text"] == str(n), f"Offene Zelle mit {n} Nachbarminen zeigt {style['text']!r}, erwartet {str(n)!r}."
+        mines = "Nachbarmine" if n == 1 else "Nachbarminen"
+        assert str(style["text"]) == str(n), f"Offene Zelle mit {n} {mines} zeigt {style['text']!r}, erwartet {str(n)!r}."
     colors = [styles[n]["fg"] for n in (1, 2, 3)]
     assert len(set(colors)) == 3, f"1, 2 und 3 haben die Textfarben {colors}. Sie sollen sich unterscheiden."
+    empty = _style(ui, _cell(is_revealed=True, neighbor_mines=0))
+    for n, style in styles.items():
+        for key in ("relief", "bg"):
+            assert style[key] == empty[key], \
+                f"Offene Zelle mit {n}: {key} ist {style[key]!r}, ein leeres offenes Feld hat {empty[key]!r}. " \
+                f"Zahlen sind aufgedeckt und sollen auch so aussehen (nur die Textfarbe ändert sich)."
 
 
 def test_open_mine():
@@ -96,6 +108,7 @@ def test_open_mine():
     empty = _style(ui, _cell(is_revealed=True, neighbor_mines=0))
     assert mine["text"] == "*", f"Aufgedeckte Mine zeigt {mine['text']!r}, erwartet '*'."
     assert mine["bg"] != empty["bg"], "Eine aufgedeckte Mine hat denselben Hintergrund wie ein leeres Feld."
+    assert mine["relief"] != "raised", "Eine aufgedeckte Mine ist offen: relief soll nicht 'raised' sein."
 
 
 def test_styles_are_label_options(tk_window):
@@ -115,7 +128,10 @@ def test_styles_are_label_options(tk_window):
 # ─────────────────────────────────────────────── Widgets im (unsichtbaren) Fenster
 
 def _ui_with_widgets(root):
+    errors = []
+    root.report_callback_exception = lambda kind, value, tb: errors.append(value)   # Tk würde sie sonst schlucken
     ui = _ui(root)
+    ui.callback_errors = errors
     try:
         ui._create_widgets(9, 9)
         ui.draw_board(ui.game.board)
@@ -128,6 +144,16 @@ def _ui_with_widgets(root):
     if not callable(getattr(ui, "_cell_style", None)):
         pytest.fail("TkinterUI hat noch keine Methode _cell_style(cell).", pytrace=False)
     return ui
+
+
+def _click(ui, root, widget, event):
+    """Klick erzeugen; Fehler im Callback als echte Ursache melden statt nur das Symptom."""
+    widget.event_generate(event)
+    root.update()
+    if ui.callback_errors:
+        error = ui.callback_errors[0]
+        hint = " bind übergibt dem Callback ein Event-Objekt: lambda e, x=x, y=y: …" if isinstance(error, TypeError) else ""
+        pytest.fail(f"Beim Klick ({event}) wirft dein Callback {type(error).__name__}: {error}.{hint}", pytrace=False)
 
 
 def test_cells_are_labels(tk_window):
@@ -145,8 +171,7 @@ def test_left_click_reveals(tk_window):
     ui = _ui_with_widgets(tk_window)
     ui.game.board = make_board(9, 9, {(7, 2)})   # (6, 2) ist eine 1: der Klick deckt genau diese Zelle auf
     ui.draw_board(ui.game.board)
-    ui.cells[2][6].event_generate("<Button-1>")
-    tk_window.update()
+    _click(ui, tk_window, ui.cells[2][6], "<Button-1>")
     opened = revealed(ui.game.board)
     assert opened, "Ein Linksklick auf cells[2][6] deckt nichts auf. Ist <Button-1> per bind an _on_left_click gebunden?"
     assert opened == {(6, 2)}, \
@@ -159,8 +184,7 @@ def test_left_click_reveals(tk_window):
 def test_right_click_flags(tk_window, event):
     """Rechtsklick setzt eine Flagge (macOS: <Button-2>, Windows/Linux: <Button-3>)"""
     ui = _ui_with_widgets(tk_window)
-    ui.cells[0][1].event_generate(event)
-    tk_window.update()
+    _click(ui, tk_window, ui.cells[0][1], event)
     assert ui.game.board.grid[0][1].is_flagged, \
         f"{event} auf cells[0][1] setzt keine Flagge. Binde beide Rechtsklick-Events an _on_right_click."
     assert ui.cells[0][1].cget("text") == "F"
