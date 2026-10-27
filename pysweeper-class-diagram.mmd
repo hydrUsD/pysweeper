@@ -94,6 +94,25 @@ classDiagram
         -_on_right_click(x: int, y: int) None
     }
 
+    class StartMenu {
+        <<Service>>
+        +ui_names: List[str]
+        +difficulties: List[DifficultyConfig]
+        +ui_choice: tk.StringVar
+        +difficulty_choice: tk.StringVar
+        +start_button: tk.Button
+        +selection: tuple[str, DifficultyConfig] | None
+        +init(master: tk.Tk, ui_names: List[str], difficulties: List[DifficultyConfig])
+        -_create_widgets() None
+        -_on_start() None
+        +run() tuple[str, DifficultyConfig] | None
+    }
+    note for StartMenu "__main__.py: LAUNCHERS = {UI-Name: Startfunktion(difficulty)}\nStartMenu(root, list(LAUNCHERS), DIFFICULTIES).run()"
+
+    class TkFrame["tk.Frame"] {
+        <<library>>
+    }
+
     Game *-- Board : manages layout
     Game --> DifficultyConfig : configured by
     Game --> GameState : tracks
@@ -102,3 +121,5 @@ classDiagram
     UserInterface <|-- TkinterUI
     UserInterface ..> Game : calls reveal / toggle_flag
     UserInterface ..> Board : reads data from
+    TkFrame <|-- StartMenu
+    StartMenu ..> DifficultyConfig : offers

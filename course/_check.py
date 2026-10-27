@@ -57,7 +57,7 @@ def check(lesson):
     print(f"🧪 {TITLES[lesson]}\n")
     shown = set()
     for r in results:
-        print(f"  {'✅' if r['passed'] else '❌'} {r['test']}")
+        print(f"  {'✅' if r['passed'] else '⏭' if r.get('skipped') else '❌'} {r['test']}")
         if r["passed"]:
             continue
         if r["message"] in shown:
@@ -67,7 +67,8 @@ def check(lesson):
         for line in r["message"].splitlines():
             print(f"       → {line}")
     passed = sum(r["passed"] for r in results)
-    print(f"\n{passed}/{len(results)} bestanden.")
+    skipped = sum(bool(r.get("skipped")) for r in results)
+    print(f"\n{passed}/{len(results)} bestanden." + (f" {skipped} übersprungen (siehe ⏭)." if skipped else ""))
     if results and passed == len(results):
         print(f"🎉 {TITLES[lesson]} geschafft! Guter Moment für einen Commit:\n"
               f"   git add -A && git commit -m \"{lesson.upper()}: {TITLES[lesson].split(' – ')[-1]}\"")

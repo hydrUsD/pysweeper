@@ -11,6 +11,8 @@ TITLES = {
     "l5_extra": "Lektion 5+ – Timer & Minen-Zähler",
     "l6": "Lektion 6 – UserInterface & TerminalUI",
     "l7": "Lektion 7 – TkinterUI (Bonus)",
+    "l8": "Lektion 8 – StartMenu",
+    "l8_extra": "Lektion 8+ – Zurück ins Startmenü",
 }
 
 HINTS = {
@@ -187,6 +189,46 @@ HINTS = {
         "Start z. B. in einem eigenen Skript: root = tk.Tk(); TkinterUI(root).run(Game(EASY)); run endet mit "
         "root.mainloop().",
     ],
+    "l8": [
+        "StartMenu IST ein Frame (Vererbung), TkinterUI HAT ein Fenster (Komposition). Was muss ein "
+        "Konstruktor tun, bevor die geerbten Teile benutzbar sind? Und woher weiß das Menü, welche "
+        "Oberflächen es anbieten soll, ohne „Terminal“ selbst hinzuschreiben?",
+        "Erste Zeile in __init__: super().__init__(master), danach erst Variablen und Widgets. Pro Auswahl "
+        "eine tk.StringVar(master=self, value=…), und jeder Radiobutton bekommt variable=… und value=…: Tk "
+        "schreibt beim Klick den value in die Variable. _on_start liest beide Variablen mit .get(), sucht das "
+        "DifficultyConfig mit dem passenden Namen heraus, speichert das Paar in selection und schließt mit "
+        "self.master.destroy(). run() ist pack() + self.master.mainloop() + return. In __main__.py ersetzt das "
+        "dict LAUNCHERS das if/else: Der Schlüssel ist der Name im Menü, der Wert die Funktion, die startet. "
+        "Die Terminal-Startfunktion ruft curses.wrapper(...) auf, die Tkinter-Startfunktion ist dein run_tkinter.",
+        "Gerüst StartMenu (Widgets und Rückgabe selbst ergänzen):\n"
+        "    class StartMenu(tk.Frame):\n"
+        "        def __init__(self, master, ui_names, difficulties):\n"
+        "            super().__init__(master)\n"
+        "            self.ui_names = ui_names\n"
+        "            self.difficulties = difficulties\n"
+        "            self.ui_choice = tk.StringVar(master=self, value=ui_names[0])\n"
+        "            self.difficulty_choice = ...\n"
+        "            self.selection = None\n"
+        "            self._create_widgets()      # Radiobuttons + self.start_button\n\n"
+        "        def _on_start(self):\n"
+        "            difficulty = next(d for d in self.difficulties if d.name == ...)\n"
+        "            self.selection = ...\n"
+        "            self.master.destroy()\n\n"
+        "Gerüst __main__.py:\n"
+        "    LAUNCHERS = {\"Terminal\": ..., \"Tkinter\": run_tkinter}\n\n"
+        "    if __name__ == \"__main__\":\n"
+        "        _use_base_tcl(tk)               # vor dem ersten tk.Tk()!\n"
+        "        selection = StartMenu(tk.Tk(), list(LAUNCHERS), DIFFICULTIES).run()\n"
+        "        if selection is not None:\n"
+        "            ...",
+    ],
+    "l8_extra": [
+        "Das Programm soll erst enden, wenn das Menü ohne Start geschlossen wird. Welche Schleife hört genau "
+        "dann auf, und warum braucht jeder Durchlauf ein neues tk.Tk()?",
+        "Eine while-Schleife, die läuft, solange run() nicht None liefert. Das Menü schließt sein Fenster mit "
+        "destroy(), deshalb braucht jede Runde ein frisches tk.Tk(). Mit dem Walross-Operator geht das in "
+        "einer Zeile: while (selection := StartMenu(...).run()) is not None: ...",
+    ],
 }
 
 ANSWERS = {
@@ -275,6 +317,23 @@ ANSWERS = {
     reveal_cell: Rückgabe dokumentieren („True = Zelle wurde aufgedeckt“), z. B. als note.
   Vergleiche: Was war im ursprünglichen Diagramm unterspezifiziert? (Rückgabewert, Ort des Cursors,
   Timer, Chording)""",
+    "l8": """Musterantworten L8
+• Warum bekommt StartMenu die UI-Namen und Schwierigkeiten übergeben, statt sie selbst zu importieren?
+  So kennt das Menü weder TerminalUI noch TkinterUI. Es zeigt einfach an, was __main__.py ihm gibt. Eine
+  dritte Oberfläche ist eine neue Zeile in LAUNCHERS, StartMenu bleibt unverändert. Das ist Dependency
+  Injection per Konstruktor, wie in L5 beschrieben (in Spring: Konstruktor-Injection), und es macht das
+  Menü testbar: Die Checks geben ihm erfundene Namen wie „Alpha“ und „Beta“.
+• Warum ist StartMenu keine UserInterface? UserInterface verspricht run(game) und draw_board(board), also
+  eine Oberfläche, die ein laufendes Spiel zeigt. Das Menü spielt kein Spiel, es wählt nur aus. Würde es
+  trotzdem erben, müsste es Methoden haben, die nichts Sinnvolles tun. Vererbung heißt „ist ein“, und ein
+  Startmenü ist kein Spielfeld (Liskov: überall, wo eine UserInterface erwartet wird, müsste es passen).
+• Was passiert ohne super().__init__(master)? Der Frame-Teil des Objekts wird nie eingerichtet: Es fehlen
+  self.tk, self.master und das echte Tk-Widget. Der Fehler kommt erst beim ersten Kind-Widget oder bei
+  StringVar(master=self) als AttributeError, weit weg von der eigentlichen Ursache. In Java ergänzt der
+  Compiler super() automatisch, in Python passiert nichts, wenn du es vergisst.
+• Warum LAUNCHERS statt if/else? Die Liste der Oberflächen steht an genau einer Stelle, und das Menü liest
+  sie von dort. Mit if/else müsstest du für eine neue UI das Menü und die Verzweigung ändern und darauf
+  achten, dass die Namen gleich geschrieben sind.""",
     "quiz": """Musterantworten Abschluss-Quiz
 1. __init__, __repr__, __eq__ (und mehr). frozen=True verbietet Zuweisungen nach dem Erzeugen und macht die
    Objekte hashbar.
