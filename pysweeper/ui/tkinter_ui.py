@@ -3,6 +3,8 @@ import tkinter as tk
 from pysweeper.game_state import GameState
 from pysweeper.ui.user_interface import UserInterface
 
+HELP = 'R restart  Q quit'
+
 
 class TkinterUI(UserInterface):
     def __init__(self, root: tk.Tk):
@@ -23,6 +25,10 @@ class TkinterUI(UserInterface):
             self.buttons.append(row)
         self.status = tk.Label(self.root)
         self.status.grid(row=height, column=0, columnspan=width)
+        for key in ("r", "R"):
+            self.root.bind(f"<{key}>", lambda e: self._restart())
+        for key in ("q", "Q"):
+            self.root.bind(f"<{key}>", lambda e: self.root.destroy())
 
     def run(self, game) -> None:
         self.game = game
@@ -39,10 +45,14 @@ class TkinterUI(UserInterface):
 
     def _status_text(self) -> str:
         if self.game.state is GameState.WON:
-            return f"You win! Cleared in {self.game.elapsed}s."
+            return f"You win! Cleared in {self.game.elapsed}s.\n{HELP}"
         if self.game.state is GameState.LOST:
-            return "Boom! You hit a mine."
-        return ""
+            return f"Boom! You hit a mine.\n{HELP}"
+        return HELP
+
+    def _restart(self) -> None:
+        self.game.reset_board()
+        self.draw_board(self.game.board)
 
     def _on_left_click(self, x: int, y: int) -> None:
         self.game.reveal(x, y)
