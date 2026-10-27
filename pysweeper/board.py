@@ -89,3 +89,9 @@ class Board:
 
     def mine_revealed(self) -> bool:
         return any(c.is_mine and c.is_revealed for row in self.grid for c in row)
+
+    def reveal_mines(self) -> None:
+        for row in self.grid:
+            for cell in row:
+                if cell.is_mine and not cell.is_flagged:
+                    cell.is_revealed = True

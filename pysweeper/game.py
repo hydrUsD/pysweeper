@@ -28,6 +28,7 @@ class Game:
             if self.start_time is None:
                 self.start_time = time.monotonic()
             if self.board.mine_revealed():
+                self.board.reveal_mines()
                 self._finish(GameState.LOST)
             elif self.board.check_win():
                 self._finish(GameState.WON)
