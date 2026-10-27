@@ -1,5 +1,6 @@
 import tkinter as tk
 
+from pysweeper.game_state import GameState
 from pysweeper.ui.user_interface import UserInterface
 
 
@@ -7,6 +8,7 @@ class TkinterUI(UserInterface):
     def __init__(self, root: tk.Tk):
         self.root = root
         self.buttons = []
+        self.status = None
         self.game = None
 
     def _create_widgets(self, width: int, height: int) -> None:
@@ -19,6 +21,8 @@ class TkinterUI(UserInterface):
                 b.grid(row=y, column=x)
                 row.append(b)
             self.buttons.append(row)
+        self.status = tk.Label(self.root)
+        self.status.grid(row=height, column=0, columnspan=width)
 
     def run(self, game) -> None:
         self.game = game
@@ -31,6 +35,14 @@ class TkinterUI(UserInterface):
             for c in row:
                 text = "F" if c.is_flagged else "" if not c.is_revealed else "*" if c.is_mine else str(c.neighbor_mines or "")
                 self.buttons[c.y][c.x].config(text=text)
+        self.status.config(text=self._status_text())
+
+    def _status_text(self) -> str:
+        if self.game.state is GameState.WON:
+            return f"You win! Cleared in {self.game.elapsed}s."
+        if self.game.state is GameState.LOST:
+            return "Boom! You hit a mine."
+        return ""
 
     def _on_left_click(self, x: int, y: int) -> None:
         self.game.reveal(x, y)
