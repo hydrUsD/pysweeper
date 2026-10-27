@@ -6,7 +6,9 @@ Ist PYSWEEPER_CHECK_OUT gesetzt, landet pro Test ein Eintrag
 import json
 import linecache
 import os
+import pathlib
 import random
+import sys
 
 import pytest
 
@@ -17,6 +19,31 @@ _results = []
 def _seed():
     # Fester Seed: ein zufällig sofort gewonnenes Spiel soll keinen Test flackern lassen.
     random.seed(20261025)
+
+
+@pytest.fixture
+def tk_root():
+    """Verstecktes Tk-Fenster für die L8-Checks. Ohne Bildschirm wird der Test übersprungen."""
+    import tkinter as tk
+
+    # Gleicher Tcl-Fix wie in pysweeper/__main__.py: In der venv sucht Tcl seine Bibliothek sonst am falschen Ort.
+    lib = pathlib.Path(sys.base_prefix) / "lib"
+    for var, path in (("TCL_LIBRARY", lib / f"tcl{tk.TclVersion}"), ("TK_LIBRARY", lib / f"tk{tk.TkVersion}")):
+        if var not in os.environ and path.is_dir():
+            os.environ[var] = str(path)
+    try:
+        root = tk.Tk()
+    except tk.TclError as e:
+        if os.environ.get("CI"):
+            # In CI darf ein kaputtes Tk nicht als „übersprungen“ grün durchrutschen.
+            pytest.fail(f"Tk startet in CI nicht: {e}. Laufen die Checks unter xvfb-run?", pytrace=False)
+        pytest.skip(f"Tk startet hier nicht: {e}")
+    root.withdraw()
+    yield root
+    try:
+        root.destroy()
+    except tk.TclError:
+        pass   # schon geschlossen, z. B. durch den Start-Button
 
 
 def _message(report):
@@ -51,7 +78,15 @@ def pytest_runtest_makereport(item, call):
 
 
 def pytest_runtest_logreport(report):
-    if report.when == "call" or report.outcome == "failed":
+    if report.skipped:
+        reason = report.longrepr[2] if isinstance(report.longrepr, tuple) else str(report.longrepr)
+        _results.append({
+            "test": report.description,
+            "passed": False,
+            "skipped": True,
+            "message": reason.removeprefix("Skipped: ").strip(),
+        })
+    elif report.when == "call" or report.outcome == "failed":
         _results.append({
             "test": report.description,
             "passed": report.outcome == "passed",

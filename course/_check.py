@@ -45,8 +45,8 @@ def check(lesson):
                 cwd=ROOT, env=env, capture_output=True, text=True, timeout=60,
             )
         except subprocess.TimeoutExpired:
-            print("⏱  Zeitüberschreitung nach 60 s. Hängt eine Schleife? (z. B. Cascade ohne "
-                  "'schon aufgedeckt?'-Prüfung)")
+            print("⏱  Zeitüberschreitung nach 60 s. Hängt eine Schleife? (z. B. eine Cascade ohne "
+                  "'schon aufgedeckt?'-Prüfung oder eine mainloop(), die nie endet)")
             return
         if not out.exists():
             print("Die Tests konnten nicht starten:\n")
@@ -55,19 +55,20 @@ def check(lesson):
         results = json.loads(out.read_text(encoding="utf-8"))
 
     print(f"🧪 {TITLES[lesson]}\n")
-    shown = set()
+    shown = {}   # Meldung → Test, bei dem sie zuerst kam
     for r in results:
-        print(f"  {'✅' if r['passed'] else '❌'} {r['test']}")
+        print(f"  {'✅' if r['passed'] else '⏭' if r.get('skipped') else '❌'} {r['test']}")
         if r["passed"]:
             continue
         if r["message"] in shown:
-            print("       → (gleicher Grund wie oben)")
+            print(f"       → (gleicher Grund wie bei „{shown[r['message']]}“)")
             continue
-        shown.add(r["message"])
+        shown[r["message"]] = r["test"]
         for line in r["message"].splitlines():
             print(f"       → {line}")
     passed = sum(r["passed"] for r in results)
-    print(f"\n{passed}/{len(results)} bestanden.")
+    skipped = sum(bool(r.get("skipped")) for r in results)
+    print(f"\n{passed}/{len(results)} bestanden." + (f" {skipped} übersprungen (siehe ⏭)." if skipped else ""))
     if results and passed == len(results):
         print(f"🎉 {TITLES[lesson]} geschafft! Guter Moment für einen Commit:\n"
               f"   git add -A && git commit -m \"{lesson.upper()}: {TITLES[lesson].split(' – ')[-1]}\"")

@@ -121,7 +121,8 @@ pysweeper/
 │   └── ui/
 │       ├── user_interface.py     # UserInterface (ABC)
 │       ├── terminal_ui.py        # TerminalUI (curses)
-│       └── tkinter_ui.py         # TkinterUI (bonus)
+│       ├── tkinter_ui.py         # TkinterUI (bonus)
+│       └── start_menu.py         # StartMenu (Tk window, L8)
 ├── .run/pysweeper.run.xml        # shared PyCharm/IntelliJ run configuration
 ├── course/
 │   ├── oop-kurs.ipynb            # the course notebook (German)
@@ -152,6 +153,9 @@ classDiagram
     UserInterface <|-- TkinterUI
     UserInterface ..> Game : reveal / toggle_flag
     UserInterface ..> Board : reads
+    TkFrame <|-- StartMenu
+    StartMenu ..> DifficultyConfig : offers
+    class TkFrame["tk.Frame"]
     class UserInterface {
         <<abstract>>
     }
@@ -185,6 +189,8 @@ The course is written in **German** and targets developers who know OOP from Jav
 | L5+ | Timer and mine counter |
 | L6 | `UserInterface` (abstract base class) and `TerminalUI` with `curses` |
 | L7 | Bonus: `TkinterUI` |
+| L8 | `StartMenu`: inheriting from `tk.Frame`, `super()`, `tk.StringVar`, functions as dict values |
+| L8+ | Back to the start menu after each game |
 
 Each lesson follows the same loop: 🎯 learning goal → 📖 theory → 🛠 task → 💡 hints → ✅ check.
 
@@ -200,6 +206,7 @@ or call `check("l1")` from inside the notebook. Running the whole suite (`uv run
 
 GitHub Actions runs the checks on every push and on pull requests to `main`, but only for finished lessons.
 They're listed in `LESSONS` in [`.github/workflows/tests.yml`](.github/workflows/tests.yml). Add a lesson there when you complete it.
+CI runs the checks under `xvfb-run`, because the L8 checks open a (hidden) Tk window and need a display.
 
 ## Roadmap
 
@@ -210,6 +217,7 @@ They're listed in `LESSONS` in [`.github/workflows/tests.yml`](.github/workflows
 - [x] `UserInterface` and `TerminalUI` (L6)
 - [x] Bonus: `TkinterUI` front end (L7)
 - [x] Start menu for front end and difficulty (`python -m pysweeper`)
+- [ ] `StartMenu` as its own Tkinter class, replacing the curses menu (L8)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 

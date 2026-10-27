@@ -124,7 +124,8 @@ def test_main_module_guarded(monkeypatch):
         return any(isinstance(n, ast.Call) and getattr(n.func, "attr", getattr(n.func, "id", None)) == "wrapper"
                    for n in ast.walk(node))
 
-    guards = [n for n in ast.walk(ast.parse(inspect.getsource(mod)))
-              if isinstance(n, ast.If) and "__name__" in ast.unparse(n.test)]
-    assert any(calls_wrapper(g) for g in guards), \
-        "In __main__.py fehlt unter if __name__ == \"__main__\": der Start per curses.wrapper(...)."
+    # Der Aufruf darf direkt im Guard stehen (L6) oder in einer Startfunktion, die der Guard aufruft (L8).
+    tree = ast.parse(inspect.getsource(mod))
+    guards = [n for n in ast.walk(tree) if isinstance(n, ast.If) and "__name__" in ast.unparse(n.test)]
+    assert guards, "In __main__.py fehlt if __name__ == \"__main__\":, darunter gehört der Start des Spiels."
+    assert calls_wrapper(tree), "In __main__.py fehlt der Start der TerminalUI per curses.wrapper(...)."
