@@ -105,6 +105,13 @@ Tkinter front end: left click reveals a cell, right click toggles a flag.
 
 To play the original single-file reference instead, run `uv run main.py`. It has its own difficulty menu on `M`.
 
+### Inspecting the Tk UI with Claude Code
+
+[`tkinter-mcp-server`](https://github.com/tctibbs/tkinter-mcp-server) is a dev dependency and registered in `.mcp.json`.
+Claude Code offers it after a restart in the project folder (approve the "tkinter" server, check with `/mcp`).
+Launch the game with `launch_app` and the script `tools/tk_inspect.py`, then read the widget tree (`get_ui_layout`) and click cells (`click_widget`).
+Screenshots need the macOS permission *Screen & System Audio Recording* for the app running Claude Code. There is no tool for key presses, so R and Q can't be tested this way.
+
 ## Project structure
 
 ```
@@ -124,6 +131,8 @@ pysweeper/
 │       ├── tkinter_ui.py         # TkinterUI (bonus)
 │       └── start_menu.py         # StartMenu (Tk window, L8)
 ├── .run/pysweeper.run.xml        # shared PyCharm/IntelliJ run configuration
+├── .mcp.json                     # tkinter-mcp server for Claude Code (see below)
+├── tools/tk_inspect.py           # starts the Tk game for tkinter-mcp
 ├── course/
 │   ├── oop-kurs.ipynb            # the course notebook (German)
 │   ├── _check.py, _hints.py      # check runner and tiered hints
