@@ -43,7 +43,7 @@ The rebuild is guided by a Jupyter notebook course: each lesson explains a Pytho
 (with side-by-side comparisons to Java), sets a task, offers tiered hints and verifies the result with automated checks.
 
 > [!NOTE]
-> `main.py` is the finished, playable reference. The `pysweeper/` package is the refactor and is still being written.
+> `main.py` is the original single-file game, kept as a reference. The `pysweeper/` package is the finished refactor. Start it with `uv run python -m pysweeper`.
 
 ## Features
 
@@ -85,8 +85,13 @@ It strips cell outputs from `*.ipynb` files on `git add`, so outputs and local p
 ## Usage
 
 ```bash
-uv run main.py
+uv run python -m pysweeper
 ```
+
+A menu asks for the front end (Terminal or Tkinter) and the difficulty. It runs on `curses`, so start it from a real terminal.
+In PyCharm or IntelliJ, use the shared run configuration **pysweeper** ([`.run/pysweeper.run.xml`](.run/pysweeper.run.xml)). It runs the same module with terminal emulation turned on.
+
+Terminal front end:
 
 | Key | Action |
 |---|---|
@@ -94,8 +99,11 @@ uv run main.py
 | `Space` / `Enter` | Reveal a cell (or chord on a satisfied number) |
 | `F` | Toggle flag |
 | `R` | Restart |
-| `M` | Difficulty menu |
 | `Q` | Quit |
+
+Tkinter front end: left click reveals a cell, right click toggles a flag.
+
+To play the original single-file reference instead, run `uv run main.py`. It has its own difficulty menu on `M`.
 
 ## Project structure
 
@@ -104,6 +112,7 @@ pysweeper/
 ├── main.py                       # original single-file game (reference)
 ├── pysweeper-class-diagram.mmd   # target architecture (Mermaid)
 ├── pysweeper/                    # the OOP refactor, one class per file
+│   ├── __main__.py               # entry point: menu for front end and difficulty
 │   ├── game_state.py             # GameState (Enum)
 │   ├── difficulty_config.py      # DifficultyConfig + presets
 │   ├── cell.py                   # Cell
@@ -111,7 +120,9 @@ pysweeper/
 │   ├── game.py                   # Game (controller)
 │   └── ui/
 │       ├── user_interface.py     # UserInterface (ABC)
-│       └── terminal_ui.py        # TerminalUI (curses)
+│       ├── terminal_ui.py        # TerminalUI (curses)
+│       └── tkinter_ui.py         # TkinterUI (bonus)
+├── .run/pysweeper.run.xml        # shared PyCharm/IntelliJ run configuration
 ├── course/
 │   ├── oop-kurs.ipynb            # the course notebook (German)
 │   ├── _check.py, _hints.py      # check runner and tiered hints
@@ -195,9 +206,10 @@ They're listed in `LESSONS` in [`.github/workflows/tests.yml`](.github/workflows
 - [x] Original game (`main.py`)
 - [x] Course notebook and lesson checks
 - [x] Package structure (L0)
-- [ ] Core classes (L1–L5)
-- [ ] `UserInterface` and `TerminalUI` (L6)
-- [ ] Bonus: `TkinterUI` front end (L7)
+- [x] Core classes (L1–L5)
+- [x] `UserInterface` and `TerminalUI` (L6)
+- [x] Bonus: `TkinterUI` front end (L7)
+- [x] Start menu for front end and difficulty (`python -m pysweeper`)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
