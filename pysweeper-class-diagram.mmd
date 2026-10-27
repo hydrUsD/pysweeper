@@ -85,14 +85,16 @@ classDiagram
     class TkinterUI {
         <<Service>>
         +root: tk.Tk
-        +buttons: List[List[tk.Button]]
+        +cells: List[List[tk.Label]]
         +init(root: tk.Tk)
         -_create_widgets(width: int, height: int) None
         +run(game: Game) None
         +draw_board(board: Board) None
+        -_cell_style(cell: Cell) dict
         -_on_left_click(x: int, y: int) None
         -_on_right_click(x: int, y: int) None
     }
+    note for TkinterUI "cells[y][x] sind Labels (macOS-Buttons ignorieren bg/relief)\n_cell_style: Zellzustand → Tk-Optionen, draw_board: label.config(**style)"
 
     class StartMenu {
         <<Service>>
@@ -121,5 +123,6 @@ classDiagram
     UserInterface <|-- TkinterUI
     UserInterface ..> Game : calls reveal / toggle_flag
     UserInterface ..> Board : reads data from
+    TkinterUI ..> Cell : styles
     TkFrame <|-- StartMenu
     StartMenu ..> DifficultyConfig : offers

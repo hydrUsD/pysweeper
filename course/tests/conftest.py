@@ -21,9 +21,7 @@ def _seed():
     random.seed(20261025)
 
 
-@pytest.fixture
-def tk_root():
-    """Verstecktes Tk-Fenster für die L8-Checks. Ohne Bildschirm wird der Test übersprungen."""
+def _new_tk_root():
     import tkinter as tk
 
     # Gleicher Tcl-Fix wie in pysweeper/__main__.py: In der venv sucht Tcl seine Bibliothek sonst am falschen Ort.
@@ -32,18 +30,39 @@ def tk_root():
         if var not in os.environ and path.is_dir():
             os.environ[var] = str(path)
     try:
-        root = tk.Tk()
+        return tk.Tk()
     except tk.TclError as e:
         if os.environ.get("CI"):
             # In CI darf ein kaputtes Tk nicht als „übersprungen“ grün durchrutschen.
             pytest.fail(f"Tk startet in CI nicht: {e}. Laufen die Checks unter xvfb-run?", pytrace=False)
         pytest.skip(f"Tk startet hier nicht: {e}")
-    root.withdraw()
-    yield root
+
+
+def _close(root):
+    import tkinter as tk
     try:
         root.destroy()
     except tk.TclError:
         pass   # schon geschlossen, z. B. durch den Start-Button
+
+
+@pytest.fixture
+def tk_root():
+    """Verstecktes Tk-Fenster für die L8-Checks. Ohne Bildschirm wird der Test übersprungen."""
+    root = _new_tk_root()
+    root.withdraw()
+    yield root
+    _close(root)
+
+
+@pytest.fixture
+def tk_window():
+    """Unsichtbares, aber angezeigtes Tk-Fenster (L9): Erzeugte Klicks erreichen nur angezeigte Widgets."""
+    root = _new_tk_root()
+    root.attributes("-alpha", 0.0)
+    root.geometry("+-3000+-3000")
+    yield root
+    _close(root)
 
 
 def _message(report):
