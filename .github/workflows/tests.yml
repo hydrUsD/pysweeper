@@ -17,6 +17,9 @@ jobs:
       # Lessons whose checks must pass (ids from course/tests/test_<id>.py).
       # Add a lesson once it is finished, e.g. "l0 l1 l2 l3 l4 l4_extra".
       LESSONS: l0 l1 l2 l3 l4 l4_extra l5 l5_extra l6 l7 l8 l8_extra l9 l9_extra
+      # uv's own Python build aborts in Tk under xvfb ([xcb] Unknown sequence number),
+      # so run on Ubuntu's Python with python3-tk (overrides .python-version)
+      UV_PYTHON: /usr/bin/python3
     steps:
       - uses: actions/checkout@v7
 
@@ -25,12 +28,12 @@ jobs:
         with:
           enable-cache: true
 
+      # Tk checks (L8, L9) need Tk and a display; xvfb-run provides a virtual one
+      - name: Install Tk and xvfb
+        run: sudo apt-get update && sudo apt-get install -y python3-tk xvfb
+
       - name: Install dependencies
         run: uv sync --locked
-
-      # Tk checks (L8) need a display; xvfb-run provides a virtual one
-      - name: Install xvfb
-        run: sudo apt-get update && sudo apt-get install -y xvfb
 
       - name: Run lesson checks
         run: xvfb-run -a uv run pytest $(printf 'course/tests/test_%s.py ' $LESSONS)
